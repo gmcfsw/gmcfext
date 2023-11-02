@@ -1,84 +1,55 @@
 <!DOCTYPE html>
 <html lang="ko">
 
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
-<style>
-    /* Target all <svg> elements and set their width and height */
-    svg {
-      width: 100px; /* Set your desired width */
-      height: 100px; /* Set your desired height */
-    }
-  </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
-<script src="https://apis.google.com/js/api.js"></script>
-<!--<script src="viewer.js"></script>-->
+<title>Google Sheets DataTable</title>
+  <!-- Include DataTables, jQuery, and Google API Platform library -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.6/css/jquery.dataTables.min.css">
+</head>
+<body>
+  <table id="datatable" class="display" style="width:100%"></table>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
+
 <script>
-	const SPREADSHEET_ID = '1JzsKbWb0ei8-gmjVi14WKX8XihlPiOymBaFG0dhD9Mo';
-    const RANGE = 'Sheet1';
-    const CLIENT_ID = '559859685690-vpt1u03eg2su86qm475358tn4parjama.apps.googleusercontent.com';
-    const API_KEY = 'AIzaSyAUQWObylV_0Jx9vX7wwTCc5V7gcEv7T0s';
-    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-
-    let table;
-
+// Set your API key (from Google Developer Console)
     gapi.load('client', init);
 
     function init() {
       gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-        scope: SCOPES
+        apiKey: 'AIzaSyAUQWObylV_0Jx9vX7wwTCc5V7gcEv7T0s', // Replace with your API key
       }).then(function () {
         // Authenticate with Google Sheets API.
         gapi.auth2.getAuthInstance().signIn().then(function () {
           // Load data for the first time.
           fetchData();
-          // Set a timer to refresh data every 10 seconds.
-          setInterval(fetchData, 10000);
         });
       });
     }
 
+    let table;
+
     function fetchData() {
+      // Use the Google Sheets API to fetch data from your spreadsheet.
       gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: RANGE
+        spreadsheetId: '1JzsKbWb0ei8-gmjVi14WKX8XihlPiOymBaFG0dhD9Mo', // Replace with your Google Spreadsheet ID
+        range: 'Sheet1', // Adjust to the appropriate sheet and range
       }).then(function (response) {
         const data = response.result.values;
+
         if (!table) {
           // Create DataTable with the retrieved data.
           table = $('#datatable').DataTable({
             data: data,
-            columns: [
-               { title: '문서번호' },
-		              { title: '결재완료일' },
-		              { title: '문서명' },
-		              { title: '지출금액' },
-		              { title: '지급기한' },
-		              { title: '지결제출일시' },
-		              { title: '서명' },
-		              { title: '확인자' },
-		              { title: '확인일' },
-		              { title: '비고' },
-              // Add more column definitions as needed
-            ],order: [[5, 'desc']]
-            ,columnDefs: [{
-					    "defaultContent": "-",
-					    "targets": "_all"
-			}]
+            columns: data[0].map(column => ({ title: column })),
+            "pageLength": 10 // Set the number of rows per page
           });
 
           // Enable inline editing with DataTables Editor extension.
           new $.fn.dataTable.Editor({
             table: "#datatable",
-            fields: [
-              { label: "확인자", name: "확인자" },
-              { label: "확인일", name: "확인일" },
-              { label: "비고", name: "비고" }
-              // Define more editable fields as needed
-            ]
+            fields: data[0].map(column => ({ label: column, name: column })),
           });
         } else {
           // Clear and update the DataTable with the retrieved data.
@@ -86,6 +57,10 @@
         }
       });
     }
+
+    // Fetch data every 10 seconds
+    fetchData();
+    setInterval(fetchData, 10000); // 10 seconds
 </script>
 <head>
     <meta charset="UTF-8">
